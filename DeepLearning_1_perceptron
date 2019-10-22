@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+# encoding: utf-8
+# python 3.2
+
+from functools import reduce
+
+class Perceptron(object):
+    def __init__(self, input_num, activator):
+        """
+        初始化感知器，设置输入参数的个数，以及激活函数。
+        激活函数的类型为 double -> double
+        :param input_num:
+        :param activator:
+        """
+        self.activator = activator
+        #  权重初始化为0
+        self.weights = [0.0 for _ in range(input_num)]
+        # 偏置项初始化为0
+        self.bias = 0.0
+
+    def __str__(self):
+        """
+        打印学习得到的权重、偏置项
+        :return:
+        """
+        return 'weights\t:%s\nbias\t；%f\n' % (self.weights, self.bias)
+
+    def predict(self, input_vec):
+        """
+        输入向量，输出感知器计算结果
+        :param input_vec:
+        :return:
+        """
+
+        # 最后利用reduce累加求和
+        # 把input_vec[x1,x2,x3,..]和weight[w1,w2,w3,..]打包在一起变成【(x1,w1),(x2,w2),..】
+
+        return self.activator(
+           reduce(lambda a, b: a + b,
+                  list(map(lambda x_w: x_w[0] * x_w[1],
+                           zip(input_vec, self.weights)))
+                  ,0.0) + self.bias)
+
+        # sample = zip(input_vecs, self.weights)
+        # # 对每一组样本
+        # for(input_vec, self.weight) in sample:
+        # # 计算f(w * xi + b),此时x有两个
+        #     result = input_vec * self.weight + self.bias
+        #
+        # return self.activator(result)
+
+        # return self.activator(
+        #     reduce(lambda a,b: a + b,
+        #            map(lambda x_w: x_w[0] * x_w[1],
+        #                zip(input_vec, self.weights))
+        #            ,0.0) + self.bias
+        # )
+
+    def train(self, input_vecs, labels, iteration, rate):
+        """
+        输入训练数据：一组向量、与每个向量对应的label;以及训练轮数、学习率
+        :param input_vecs:
+        :param labels:
+        :param iteration:
+        :param rate:
+        :return:
+        """
+        for i in range(iteration):
+            self._one_iteration(input_vecs, labels, rate)
+
+    def _one_iteration(self, input_vecs, lables, rate):
+        """
+        一次迭代，把所有的数据过一遍
+        :param input_vecs:
+        :param lables:
+        :param rate:
+        :return:
+        """
+        # 把输入和输出打包在一起，成为样本的列表[(input_vec,label),...]
+        # 而每个训练样本(input_vec, label)
+        samples = zip(input_vecs, lables)
+        # 对每个样本，按照感知器的规则更新权重
+        for (input_vec, lable) in samples:
+            # 计算感知器在当前权重下的输出
+            output = self.predict(input_vec)
+            # 更新权重
+            self._update_weights(input_vec, output, lable, rate)
+
+
+    def _update_weights(self, input_vec, output, label, rate):
+        """
+        按照感知器的规则更新权重
+        :param input_vec:
+        :param output:
+        :param label:
+        :param rate:
+        :return:
+        """
+        delta = label - output
+        self.weights = list(
+            map(lambda x_w: x_w[1] + rate * delta * x_w[0],
+                zip(input_vec,self.weights)))
+        # 更新bias
+        self.bias += rate * delta
+
+        print("_update_weights() -------------")
+        print("label - output = delta:", label, output, delta)
+        print("weights", self.weights)
+        print("bias", self.bias)
